@@ -1,14 +1,24 @@
 require 'spec_helper_acceptance'
 
-describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fact('osfamily') == 'RedHat') do
+if fact('operatingsystemmajrelease') == '6' && fact('osfamily') == 'RedHat'
+  user_shell = '/bin/bash'
+else
+  case fact('osfamily')
+  when 'RedHat', 'Suse'
+    user_shell = '/sbin/nologin'
+  when 'Debian'
+    user_shell = '/usr/sbin/nologin'
+  end
+end
+
+describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fact('osfamily') == 'RedHat') do # systemd systems not supported by kafka::producer::service
   it 'works with no errors' do
     pp = <<-EOS
       exec { 'create fifo':
-        command => '/bin/mkfifo /tmp/kafka-producer',
+        command => '/usr/bin/mkfifo /tmp/kafka-producer',
         user    => 'kafka',
         creates => '/tmp/kafka-producer',
       } ->
-      class { 'zookeeper': } ->
       class { 'kafka::producer':
         service_config => {
           'broker-list' => 'localhost:9092',
@@ -27,11 +37,10 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
       it 'works with no errors' do
         pp = <<-EOS
           exec { 'create fifo':
-            command => '/bin/mkfifo /tmp/kafka-producer',
+            command => '/usr/bin/mkfifo /tmp/kafka-producer',
             user    => 'kafka',
             creates => '/tmp/kafka-producer',
           } ->
-          class { 'zookeeper': } ->
           class { 'kafka::producer':
             service_config => {
               'broker-list' => 'localhost:9092',
@@ -52,7 +61,7 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
       describe user('kafka') do
         it { is_expected.to exist }
         it { is_expected.to belong_to_group 'kafka' }
-        it { is_expected.to have_login_shell '/bin/bash' }
+        it { is_expected.to have_login_shell user_shell }
       end
 
       describe file('/var/tmp/kafka') do
@@ -61,14 +70,14 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
-      describe file('/opt/kafka-2.11-0.11.0.3') do
+      describe file('/opt/kafka-2.12-2.4.1') do
         it { is_expected.to be_directory }
         it { is_expected.to be_owned_by 'kafka' }
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/opt/kafka') do
-        it { is_expected.to be_linked_to('/opt/kafka-2.11-0.11.0.3') }
+        it { is_expected.to be_linked_to('/opt/kafka-2.12-2.4.1') }
       end
 
       describe file('/opt/kafka/config') do
@@ -90,11 +99,10 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
       it 'works with no errors' do
         pp = <<-EOS
           exec { 'create fifo':
-            command => '/bin/mkfifo /tmp/kafka-producer',
+            command => '/usr/bin/mkfifo /tmp/kafka-producer',
             user    => 'kafka',
             creates => '/tmp/kafka-producer',
           } ->
-          class { 'zookeeper': } ->
           class { 'kafka::producer':
             service_config => {
               'broker-list' => 'localhost:9092',
@@ -120,7 +128,6 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
     context 'with default parameters' do
       it 'works with no errors' do
         pp = <<-EOS
-          class { 'zookeeper': } ->
           class { 'kafka::producer':
             service_config => {
               'broker-list' => 'localhost:9092',
@@ -134,12 +141,16 @@ describe 'kafka::producer', if: (fact('operatingsystemmajrelease') == '6' && fac
         apply_manifest(pp, catch_changes: true)
       end
 
-      describe file('/etc/init.d/kafka-producer'), if: (fact('operatingsystemmajrelease') =~ %r{(5|6)} && fact('osfamily') == 'RedHat') do
+      describe file('/etc/init.d/kafka-producer') do
         it { is_expected.to be_file }
         it { is_expected.to be_owned_by 'root' }
         it { is_expected.to be_grouped_into 'root' }
-        it { is_expected.to contain 'export KAFKA_JMX_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false' }
-        it { is_expected.to contain 'export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/../config/log4j.properties"' }
+        it { is_expected.to contain 'export KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9992"' }
+        it { is_expected.to contain 'export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:/opt/kafka/config/log4j.properties"' }
+      end
+
+      describe file('/etc/init.d/kafka-producer'), if: (fact('service_provider') == 'upstart' && fact('osfamily') == 'Debian') do
+        it { is_expected.to contain %r{^# Provides:\s+kafka-producer$} }
       end
 
       describe service('kafka-producer') do

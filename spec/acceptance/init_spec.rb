@@ -1,5 +1,16 @@
 require 'spec_helper_acceptance'
 
+if fact('operatingsystemmajrelease') == '6' && fact('osfamily') == 'RedHat'
+  user_shell = '/bin/bash'
+else
+  case fact('osfamily')
+  when 'RedHat', 'Suse'
+    user_shell = '/sbin/nologin'
+  when 'Debian'
+    user_shell = '/usr/sbin/nologin'
+  end
+end
+
 describe 'kafka' do
   it 'works with no errors' do
     pp = <<-EOS
@@ -27,7 +38,7 @@ describe 'kafka' do
       describe user('kafka') do
         it { is_expected.to exist }
         it { is_expected.to belong_to_group 'kafka' }
-        it { is_expected.to have_login_shell '/bin/bash' }
+        it { is_expected.to have_login_shell user_shell }
       end
 
       describe file('/var/tmp/kafka') do
@@ -36,20 +47,20 @@ describe 'kafka' do
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
-      describe file('/opt/kafka-2.11-0.11.0.3') do
+      describe file('/opt/kafka-2.12-2.4.1') do
         it { is_expected.to be_directory }
         it { is_expected.to be_owned_by 'kafka' }
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/opt/kafka') do
-        it { is_expected.to be_linked_to('/opt/kafka-2.11-0.11.0.3') }
+        it { is_expected.to be_linked_to('/opt/kafka-2.12-2.4.1') }
       end
 
       describe file('/opt/kafka/config') do
         it { is_expected.to be_directory }
-        it { is_expected.to be_owned_by 'root' }
-        it { is_expected.to be_grouped_into 'root' }
+        it { is_expected.to be_owned_by 'kafka' }
+        it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/var/log/kafka') do
@@ -63,7 +74,7 @@ describe 'kafka' do
       it 'works with no errors' do
         pp = <<-EOS
           class { 'kafka':
-            version => '1.1.0',
+            kafka_version => '2.4.0',
           }
         EOS
 
@@ -77,7 +88,7 @@ describe 'kafka' do
       describe user('kafka') do
         it { is_expected.to exist }
         it { is_expected.to belong_to_group 'kafka' }
-        it { is_expected.to have_login_shell '/bin/bash' }
+        it { is_expected.to have_login_shell user_shell }
       end
 
       describe file('/var/tmp/kafka') do
@@ -86,20 +97,20 @@ describe 'kafka' do
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
-      describe file('/opt/kafka-2.11-1.1.0') do
+      describe file('/opt/kafka-2.12-2.4.0') do
         it { is_expected.to be_directory }
         it { is_expected.to be_owned_by 'kafka' }
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/opt/kafka') do
-        it { is_expected.to be_linked_to('/opt/kafka-2.11-1.1.0') }
+        it { is_expected.to be_linked_to('/opt/kafka-2.12-2.4.0') }
       end
 
       describe file('/opt/kafka/config') do
         it { is_expected.to be_directory }
-        it { is_expected.to be_owned_by 'root' }
-        it { is_expected.to be_grouped_into 'root' }
+        it { is_expected.to be_owned_by 'kafka' }
+        it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/var/log/kafka') do
@@ -113,7 +124,7 @@ describe 'kafka' do
       it 'works with no errors' do
         pp = <<-EOS
           class { 'kafka':
-            scala_version => '2.11',
+            scala_version => '2.13',
           }
         EOS
 
@@ -127,7 +138,7 @@ describe 'kafka' do
       describe user('kafka') do
         it { is_expected.to exist }
         it { is_expected.to belong_to_group 'kafka' }
-        it { is_expected.to have_login_shell '/bin/bash' }
+        it { is_expected.to have_login_shell user_shell }
       end
 
       describe file('/var/tmp/kafka') do
@@ -136,20 +147,20 @@ describe 'kafka' do
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
-      describe file('/opt/kafka-2.11-0.11.0.3') do
+      describe file('/opt/kafka-2.13-2.4.1') do
         it { is_expected.to be_directory }
         it { is_expected.to be_owned_by 'kafka' }
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/opt/kafka') do
-        it { is_expected.to be_linked_to('/opt/kafka-2.11-0.11.0.3') }
+        it { is_expected.to be_linked_to('/opt/kafka-2.13-2.4.1') }
       end
 
       describe file('/opt/kafka/config') do
         it { is_expected.to be_directory }
-        it { is_expected.to be_owned_by 'root' }
-        it { is_expected.to be_grouped_into 'root' }
+        it { is_expected.to be_owned_by 'kafka' }
+        it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/var/log/kafka') do
@@ -177,7 +188,7 @@ describe 'kafka' do
       describe user('kafka') do
         it { is_expected.to exist }
         it { is_expected.to belong_to_group 'kafka' }
-        it { is_expected.to have_login_shell '/bin/bash' }
+        it { is_expected.to have_login_shell user_shell }
       end
 
       describe file('/var/tmp/kafka') do
@@ -186,20 +197,20 @@ describe 'kafka' do
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
-      describe file('/opt/kafka-2.11-0.11.0.3') do
+      describe file('/opt/kafka-2.12-2.4.1') do
         it { is_expected.to be_directory }
         it { is_expected.to be_owned_by 'kafka' }
         it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/opt/kafka') do
-        it { is_expected.to be_linked_to('/opt/kafka-2.11-0.11.0.3') }
+        it { is_expected.to be_linked_to('/opt/kafka-2.12-2.4.1') }
       end
 
       describe file('/opt/kafka/custom_config') do
         it { is_expected.to be_directory }
-        it { is_expected.to be_owned_by 'root' }
-        it { is_expected.to be_grouped_into 'root' }
+        it { is_expected.to be_owned_by 'kafka' }
+        it { is_expected.to be_grouped_into 'kafka' }
       end
 
       describe file('/var/log/kafka') do

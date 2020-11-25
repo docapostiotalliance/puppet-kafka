@@ -1,121 +1,131 @@
-# Author::    Liam Bennett  (mailto:lbennett@opentable.com)
-# Copyright:: Copyright (c) 2013 OpenTable Inc
-# License::   MIT
-
-# == Class: kafka::mirror
+# @summary
+#   This class handles the Kafka (mirror).
 #
-# This class will install kafka with the mirror role.
+# @example Basic usage
+#   class { 'kafka::mirror':
+#     consumer_config => {
+#       'group.id'          => 'kafka-mirror',
+#       'zookeeper.connect' => 'localhost:2181'
+#     },
+#     producer_config => {
+#       'zookeeper.connect' => 'localhost:2181',
+#     },
+#     service_config => {
+#       'whitelist'         => '.*',
+#     }
+#   }
 #
-# === Requirements/Dependencies
+# @param kafka_version
+#   The version of Kafka that should be installed.
 #
-# Currently requires the puppetlabs/stdlib module on the Puppet Forge in
-# order to validate much of the the provided configuration.
+# @param scala_version
+#   The scala version what Kafka was built with.
 #
-# === Parameters
+# @param install_dir
+#   The directory to install Kafka to.
 #
-# [*version*]
-# The version of kafka that should be installed.
+# @param mirror_url
+#   The url where the Kafka is downloaded from.
 #
-# [*scala_version*]
-# The scala version what kafka was built with.
+# @param manage_java
+#   Install java if it's not already installed.
 #
-# [*install_dir*]
-# The directory to install kafka to.
+# @param package_dir
+#   The directory to install Kafka.
 #
-# [*mirror_url*]
-# The url where the kafka is downloaded from.
+# @param package_name
+#   Package name, when installing Kafka from a package.
 #
-# [*install_java*]
-# Install java if it's not already installed.
+# @param package_ensure
+#   Package version or ensure state, when installing Kafka from a package.
 #
-# [*package_dir*]
-# The directory to install kafka.
+# @param user_name
+#   User to run Kafka as.
 #
-# [*package_name*]
-# Package name, when installing kafka from a package.
+# @param user_shell
+#   Login shell of the Kafka user.
 #
-# [*package_ensure*]
-# Package version (or 'present', 'absent', 'latest'), when installing kafka from a package.
+# @param group_name
+#   Group to run Kafka as.
 #
-# [*user*]
-# User to run kafka as.
+# @param user_id
+#   Create the Kafka user with this ID.
 #
-# [*group*]
-# Group to run kafka as.
+# @param group_id
+#   Create the Kafka group with this ID.
 #
-# [*user_id*]
-# Create the kafka user with this ID.
+# @param manage_user
+#   Create the Kafka user if it's not already present.
 #
-# [*group_id*]
-# Create the kafka group with this ID.
+# @param manage_group
+#   Create the Kafka group if it's not already present.
 #
-# [*manage_user*]
-# Create the kafka user if it's not already present.
+# @param config_mode
+#   The permissions for the config files.
 #
-# [*manage_group*]
-# Create the kafka group if it's not already present.
+# @param config_dir
+#   The directory to create the Kafka config files to.
 #
-# [*config_dir*]
-# The directory to create the kafka config files to.
+# @param log_dir
+#   The directory for Kafka log files.
 #
-# [*log_dir*]
-# The directory for kafka log files.
+# @param bin_dir
+#   The directory where the Kafka scripts are.
 #
-# [*bin_dir*]
-# The directory where the kafka scripts are.
+# @param service_name
+#   Set the name of the service.
 #
-# [*service_name*]
-# Set the name of the service.
+# @param manage_service
+#   Install the init.d or systemd service.
 #
-# [*service_install*]
-# Install the init.d or systemd service.
+# @param service_ensure
+#   Set the ensure state of the service.
 #
-# [*service_ensure*]
-# Set the ensure state of the service to 'stopped' or 'running'.
+# @param service_restart
+#   Whether the configuration files should trigger a service restart.
 #
-# [*service_restart*]
-# Whether the configuration files should trigger a service restart.
+# @param service_requires
+#   Set the list of services required to be running before Kafka.
 #
-# [*service_requires*]
-# Set the list of services required to be running before Kafka.
+# @param limit_nofile
+#   Set the 'LimitNOFILE' option of the systemd service.
 #
-# [*limit_nofile*]
-# Set the 'LimitNOFILE' option of the systemd service.
+# @param limit_core
+#   Set the 'LimitCORE' option of the systemd service.
 #
-# [*limit_core*]
-# Set the 'LimitCORE' option of the systemd service.
+# @param env
+#   A hash of the environment variables to set.
 #
-# [*env*]
-# A hash of the environment variables to set.
+# @param consumer_config
+#   A hash of the consumer configuration options.
 #
-# [*consumer_config*]
-# A hash of the consumer configuration options.
+# @param producer_config
+#   A hash of the producer configuration options.
 #
-# [*producer_config*]
-# A hash of the producer configuration options.
+# @param service_config
+#   A hash of the mirror script options.
 #
-# [*service_config*]
-# A hash of the mirror script options.
+# @param heap_opts
+#   Set the Java heap size.
 #
-# === Examples
+# @param jmx_opts
+#   Set the JMX options.
 #
-# Create the mirror service connecting to a local zookeeper
-#
-# class { 'kafka::mirror':
-#  consumer_config => { 'client.id' => '0', 'zookeeper.connect' => 'localhost:2181' }
-# }
+# @param log4j_opts
+#   Set the Log4j options.
 #
 class kafka::mirror (
-  String $version                            = $kafka::params::version,
-  String $scala_version                      = $kafka::params::scala_version,
+  String[1] $kafka_version                   = $kafka::params::kafka_version,
+  String[1] $scala_version                   = $kafka::params::scala_version,
   Stdlib::Absolutepath $install_dir          = $kafka::params::install_dir,
   Stdlib::HTTPUrl $mirror_url                = $kafka::params::mirror_url,
-  Boolean $install_java                      = $kafka::params::install_java,
+  Boolean $manage_java                       = $kafka::params::manage_java,
   Stdlib::Absolutepath $package_dir          = $kafka::params::package_dir,
-  Optional[String] $package_name             = $kafka::params::package_name,
-  String $package_ensure                     = $kafka::params::package_ensure,
-  String $user                               = $kafka::params::user,
-  String $group                              = $kafka::params::group,
+  Optional[String[1]] $package_name          = $kafka::params::package_name,
+  String[1] $package_ensure                  = $kafka::params::package_ensure,
+  String[1] $user_name                       = $kafka::params::user_name,
+  Stdlib::Absolutepath $user_shell           = $kafka::params::user_shell,
+  String[1] $group_name                      = $kafka::params::group_name,
   Optional[Integer] $user_id                 = $kafka::params::user_id,
   Optional[Integer] $group_id                = $kafka::params::group_id,
   Boolean $manage_user                       = $kafka::params::manage_user,
@@ -124,24 +134,24 @@ class kafka::mirror (
   Stdlib::Absolutepath $config_dir           = $kafka::params::config_dir,
   Stdlib::Absolutepath $log_dir              = $kafka::params::log_dir,
   Stdlib::Absolutepath $bin_dir              = $kafka::params::bin_dir,
-  String $service_name                       = 'kafka-mirror',
-  Boolean $service_install                   = $kafka::params::service_install,
+  String[1] $service_name                    = 'kafka-mirror',
+  Boolean $manage_service                    = $kafka::params::manage_service,
   Enum['running', 'stopped'] $service_ensure = $kafka::params::service_ensure,
   Boolean $service_restart                   = $kafka::params::service_restart,
-  Array[String] $service_requires            = $kafka::params::service_requires,
-  Optional[String] $limit_nofile             = $kafka::params::limit_nofile,
-  Optional[String] $limit_core               = $kafka::params::limit_core,
+  Array[String[1]] $service_requires         = $kafka::params::service_requires,
+  Optional[String[1]] $limit_nofile          = $kafka::params::limit_nofile,
+  Optional[String[1]] $limit_core            = $kafka::params::limit_core,
   Hash $env                                  = {},
-  Hash $consumer_config                      = {},
-  Hash $producer_config                      = {},
-  Hash $service_config                       = {},
-  String $heap_opts                          = $kafka::params::mirror_heap_opts,
-  String $jmx_opts                           = $kafka::params::mirror_jmx_opts,
-  String $log4j_opts                         = $kafka::params::mirror_log4j_opts,
+  Hash[String[1],String[1]] $consumer_config = {},
+  Hash[String[1],String[1]] $producer_config = {},
+  Hash[String[1],String[1]] $service_config  = {},
+  String[1] $heap_opts                       = $kafka::params::mirror_heap_opts,
+  String[1] $jmx_opts                        = $kafka::params::mirror_jmx_opts,
+  String[1] $log4j_opts                      = $kafka::params::mirror_log4j_opts,
 ) inherits kafka::params {
 
-  class { '::kafka::mirror::install': }
-  -> class { '::kafka::mirror::config': }
-  -> class { '::kafka::mirror::service': }
+  class { 'kafka::mirror::install': }
+  -> class { 'kafka::mirror::config': }
+  -> class { 'kafka::mirror::service': }
   -> Class['kafka::mirror']
 }

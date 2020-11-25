@@ -1,27 +1,22 @@
-# Author::    Liam Bennett  (mailto:lbennett@opentable.com)
-# Copyright:: Copyright (c) 2013 OpenTable Inc
-# License::   MIT
-
-# == Class: kafka::broker::config
+# @summary
+#   This class handles the Kafka (broker) config.
 #
-# This private class is meant to be called from `kafka::broker`.
-# It manages the broker config files
+# @api private
 #
 class kafka::broker::config(
-  Stdlib::Absolutepath $config_dir = $kafka::broker::config_dir,
-  String $service_name             = $kafka::broker::service_name,
-  Boolean $service_install         = $kafka::broker::service_install,
+  Boolean $manage_service          = $kafka::broker::manage_service,
+  String[1] $service_name          = $kafka::broker::service_name,
   Boolean $service_restart         = $kafka::broker::service_restart,
-  Hash $config                     = $kafka::broker::config,
+  Hash[String[1], Any] $config     = $kafka::broker::config,
+  Stdlib::Absolutepath $config_dir = $kafka::broker::config_dir,
+  String[1] $user_name             = $kafka::broker::user_name,
+  String[1] $group_name            = $kafka::broker::group_name,
   Stdlib::Filemode $config_mode    = $kafka::broker::config_mode,
-  String $group                    = $kafka::broker::group,
 ) {
 
-  if ($caller_module_name != $module_name) {
-    fail("Use of private class ${name} by ${caller_module_name}")
-  }
+  assert_private()
 
-  if ($service_install and $service_restart) {
+  if ($manage_service and $service_restart) {
     $config_notify = Service[$service_name]
   } else {
     $config_notify = undef
@@ -30,8 +25,8 @@ class kafka::broker::config(
   $doctag = 'brokerconfigs'
   file { "${config_dir}/server.properties":
     ensure  => present,
-    owner   => 'root',
-    group   => $group,
+    owner   => $user_name,
+    group   => $group_name,
     mode    => $config_mode,
     content => template('kafka/properties.erb'),
     notify  => $config_notify,
